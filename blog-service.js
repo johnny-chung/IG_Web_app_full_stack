@@ -1,3 +1,16 @@
+/*********************************************************************************
+*  WEB322 – Assignment 02
+*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
+*  (including 3rd party web sites) or distributed to other students.
+* 
+*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 31 May 2023__________
+*
+*  Cyclic Web App URL: https://tame-gold-dhole-vest.cyclic.app_________________
+*
+*  GitHub Repository URL: https://github.com/johnny-chung/web322-app.git______________
+*
+********************************************************************************/ 
+
 let posts = [];
 let categories = [];
 
