@@ -92,7 +92,7 @@ module.exports.addPost = function(postData)
         postData.id = posts.length + 1;
 
         posts.push(postData);
-
+        res();
     })
 }
 

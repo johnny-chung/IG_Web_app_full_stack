@@ -170,7 +170,11 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
 
     function processPost(imageUrl){
         req.body.featureImage = imageUrl;    
-        blog.addPost(req.body);
+        blog.addPost(req.body)
+        .then(res.redirect("/posts"))
+        .catch((err) => {
+            console.log(err);
+        });
     } 
 
     res.redirect("/posts")
