@@ -23,14 +23,21 @@ const streamifier = require('streamifier');
 
 let blog=require("./blog-service.js");
 
+//dotenv
+const env =require("dotenv");
+env.config()
+
 
 // cloudinary config
 
 cloudinary.config(
     {
     cloud_name: 'dp2anoz4i',
+    //cloud_name: process.env.CLOUDINARY_NAME,
     api_key: '312556922355814',
+    //api_key: process.env.CLOUDINARY_API,
     api_secret: 'pdKwbgA2e8IpIh7pL147GOXl1sE',
+    //api_secret: process.env.CLOUDINARY_API_SECRET,
     secure: true
 });
 
@@ -171,13 +178,15 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
     function processPost(imageUrl){
         req.body.featureImage = imageUrl;    
         blog.addPost(req.body)
-        .then(res.redirect("/posts"))
+        .then(()=>{
+            res.redirect("/posts")
+        })
         .catch((err) => {
             console.log(err);
         });
     } 
 
-    res.redirect("/posts")
+    //res.redirect("/posts")
     
 })
 
