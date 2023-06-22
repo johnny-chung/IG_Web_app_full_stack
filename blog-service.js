@@ -120,11 +120,24 @@ module.exports.getPostsByMinDate = function(minDateStr)
 
 module.exports.getPostById = function (id) 
 {
+   
+    console.log(" in get post");
+    console.log(id);
     return new Promise ((resolve, reject) => 
     {        
         const postById = posts.filter(post => post.id == id);
         if (postById.length == 0) reject("Error: No post by this id");
-        resolve(postById);
+        resolve(postById[0]);
+    })
+}
+
+module.exports.getPublishedPostsByCategory = function(category)
+{
+    return new Promise((res, rej)=>
+    {
+        const filterPost = posts.filter(post => post.category == category && post.published == true);
+        if (filterPost.length == 0) rej("Error: No published post in this caregory");
+        res(filterPost);
     })
 }
 
