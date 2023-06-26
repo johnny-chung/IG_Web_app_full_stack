@@ -114,7 +114,7 @@ app.use(function(req,res,next)
 // redirect to about.html
 app.get("/", (req, res) => 
 {
-    res.redirect(`/about`);
+    res.redirect(`/blog`);
 });
 
 
@@ -331,7 +331,7 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
     }    
 
     function processPost(imageUrl){
-        req.body.featureImage = imageUrl;    
+        req.body.featureImage = imageUrl;                   
         blog.addPost(req.body)
         .then(()=>{
             res.redirect("/posts")

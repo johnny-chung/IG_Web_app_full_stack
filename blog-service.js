@@ -31,6 +31,15 @@ const readFSync = (fileName) =>
     }
 };
 
+const sortByDate = (a,b) => {
+    dateA = Date.parse(a.postDate);
+    dateB = Date.parse(b.postDate);
+    return (dateB - dateA);
+}
+const sortByID = (a,b) => {
+    return (a.id - b.id);
+}
+
 module.exports.initialize = function() 
 {
     return new Promise ((resolve, reject) => 
@@ -54,6 +63,7 @@ module.exports.getAllPosts = function()
 {
     return new Promise ((resolve, reject) => 
     {
+        posts.sort(sortByID);
         if (posts.length == 0) reject("Error: no results returned");
         resolve(posts);
     })
@@ -64,6 +74,7 @@ module.exports.getPublishedPosts = function()
     return new Promise ((resolve, reject) => 
     {        
         const publishedPost = posts.filter(post => post.published == true);
+        publishedPost.sort(sortByDate);
         if (publishedPost.length == 0) reject("Error: No post has been published");
         resolve(publishedPost);
     })
@@ -90,7 +101,7 @@ module.exports.addPost = function(postData)
         
         // set id
         postData.id = posts.length + 1;
-
+        postData.postDate = new Date().toJSON().slice(0, 10); 
         posts.push(postData);
         res();
     })
@@ -101,6 +112,7 @@ module.exports.getPostsByCategory = function(category)
     return new Promise((res, rej)=>
     {
         const postsByCategory = posts.filter(post => post.category == category);
+        postsByCategory.sort(sortByDate);
         if (postsByCategory.length == 0) rej("Error: No post in this caregory");
         res(postsByCategory);
     })
@@ -113,6 +125,7 @@ module.exports.getPostsByMinDate = function(minDateStr)
     return new Promise((res, rej)=>
     {
         const postsByMinDate = posts.filter(post => Date.parse(post.postDate) > minDate);
+        postsByMinDate.sort(sortByDate);
         if (postsByMinDate.length == 0) rej("Error: No post found after this date");
         res(postsByMinDate);
     })
@@ -126,6 +139,7 @@ module.exports.getPostById = function (id)
     return new Promise ((resolve, reject) => 
     {        
         const postById = posts.filter(post => post.id == id);
+        postById.sort(sortByDate);
         if (postById.length == 0) reject("Error: No post by this id");
         resolve(postById[0]);
     })
@@ -136,6 +150,7 @@ module.exports.getPublishedPostsByCategory = function(category)
     return new Promise((res, rej)=>
     {
         const filterPost = posts.filter(post => post.category == category && post.published == true);
+        filterPost.sort(sortByDate);
         if (filterPost.length == 0) rej("Error: No published post in this caregory");
         res(filterPost);
     })
