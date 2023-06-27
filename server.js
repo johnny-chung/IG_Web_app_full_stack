@@ -3,7 +3,7 @@
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 14 June 2023__________
+*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 26 June 2023__________
 *
 *  Cyclic Web App URL: https://tame-gold-dhole-vest.cyclic.app_________________
 *
@@ -361,7 +361,7 @@ app.get("/post/:id", (req, res) =>
 // others
 app.use((req, res) => 
 {
-    res.status(404).send("Page Not Found");
+    res.status(404).render("error");
 });
 
 
