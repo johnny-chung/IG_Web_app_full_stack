@@ -81,7 +81,7 @@ module.exports.getAllPosts = async function () {
         if (filteredPosts.length == 0)
             throw new Error("Error: No post found");
         filteredPosts.sort(sortByID);
-        console.log(filteredPosts);
+        //console.log(filteredPosts);
         return (filteredPosts);
     } catch (err) {
         throw new Error("Error: No post found");
