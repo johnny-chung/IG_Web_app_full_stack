@@ -43,7 +43,7 @@ let Category = sequelize.define('Category',
         category: Sequelize.STRING
     });
 
-Post.belongsTo(Category, { foreignKey: `category` });
+Post.belongsTo(Category, { foreignKey: "category" });
 
 
 //--------------------
