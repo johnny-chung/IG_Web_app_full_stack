@@ -2,6 +2,7 @@
     <div class="col-md-12">
         <h2>Posts</h2>
         <hr>
+        {{#if post.length}}
         <table class="table">
             <thead>
                 <tr>
@@ -14,23 +15,26 @@
             </thead>
             <tbody>
                 {{#each post}}
-                 <tr>
+                <tr>
                     <th scope="row">{{id}}</th>
                     <td>{{title}}</td>
-                    <td>{{postDate}}</td>
+                    <td>{{#formatDate postDate}}{{/formatDate}}</td>
                     <td>{{category}}</td>
                     <td>{{published}}</td>
                 </tr>
-                {{/each}}             
-                
+                {{/each}}
+
             </tbody>
-        </table>        
-    </div>
-    {{#unless posts}}
-    <div class="col-md-12 text-center">
+        </table>
+        {{else}}
+        <div class="col-md-12 text-center">
             <strong>{{message}}</strong>
+        </div>
+        {{/if}}
+
+        <a href="/posts/add" class="btn btn-lg btn-success pull-right">Add Post</a>
     </div>
-    {{/unless}}
-    
+
+
 
 </div>

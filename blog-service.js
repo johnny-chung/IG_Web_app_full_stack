@@ -1,160 +1,285 @@
 /*********************************************************************************
-*  WEB322 – Assignment 02
+*  WEB322 – Assignment 05
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 26 June 2023__________
+*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 12 July 2023__________
 *
 *  Cyclic Web App URL: https://tame-gold-dhole-vest.cyclic.app_________________
 *
 *  GitHub Repository URL: https://github.com/johnny-chung/web322-app.git______________
 *
-********************************************************************************/ 
+********************************************************************************/
 
-let posts = [];
-let categories = [];
+//=================
+// setup
 
-var path = require("path");
+const Sequelize = require('sequelize');
 
-
-const readFSync = (fileName) => 
-{
-    const fs = require("fs");
-    try 
+//setup sequelize
+let sequelize = new Sequelize(`tzkohokz`, `tzkohokz`, `dq1twuOkGRR-IHkpI69ocj_2dcO4EX8q`,
     {
-        data = fs.readFileSync(fileName, "utf-8");
-        //console.log(JSON.parse(data));
-        return JSON.parse(data);
-    } catch (err) 
-    {
-        throw err;
-    }
-};
+        host: `stampy.db.elephantsql.com`,
+        dialect: 'postgres',
+        port: 5432,
+        dislectOption:
+        {
+            ssl: { rejectUnauthorized: false }
+        },
+        query: { raw: true }
+    });
 
-const sortByDate = (a,b) => {
+let Post = sequelize.define('Post',
+    {
+        body: Sequelize.TEXT,
+        title: Sequelize.STRING,
+        postDate: Sequelize.DATE,
+        featureImage: Sequelize.STRING,
+        published: Sequelize.BOOLEAN
+    });
+
+let Category = sequelize.define('Category',
+    {
+        category: Sequelize.STRING
+    });
+
+Post.belongsTo(Category, { foreignKey: `category` });
+
+
+//--------------------
+// helper
+
+const sortByDate = (a, b) => {
     dateA = Date.parse(a.postDate);
     dateB = Date.parse(b.postDate);
     return (dateB - dateA);
 }
-const sortByID = (a,b) => {
+const sortByID = (a, b) => {
     return (a.id - b.id);
 }
 
-module.exports.initialize = function() 
-{
-    return new Promise ((resolve, reject) => 
-    {
-        try 
-        {
-            posts = readFSync(path.join(__dirname,"/data/posts.json"));            
-            categories = readFSync(path.join(__dirname,"/data/categories.json"));
-        } catch (err) 
-        {
-            reject("unable to read file");
+//--------------
+// initialize
+
+module.exports.initialize = async function () {
+    try {
+        await sequelize.sync();
+        console.log("sequelize sync");
+        return ("success");
+    } catch (err) {
+        throw new Error("unable to sync the database");
+    }
+    //console.log("In initialize");
+}
+
+//=======================
+// post
+// read
+module.exports.getAllPosts = async function () {
+    try {
+        const filteredPosts = await Post.findAll();
+        if (filteredPosts.length == 0)
+            throw new Error("Error: No post found");
+        filteredPosts.sort(sortByID);
+        console.log(filteredPosts);
+        return (filteredPosts);
+    } catch (err) {
+        throw new Error("Error: No post found");
+    }
+
+}
+
+module.exports.getPublishedPosts = async function () {
+    try {
+        const filteredPosts = await Post.findAll({
+            where: {
+                published: true
+            }
+        });
+        if (filteredPosts.length == 0)
+            throw new Error("Error: No post has been published");
+        filteredPosts.sort(sortByDate);
+        return (filteredPosts);
+    } catch (err) {
+        throw new Error(err);
+    }
+}
+
+module.exports.getPostsByCategory = async function (categoryIn) {
+
+
+    try {
+        const filteredPosts = await Post.findAll({
+            where: {
+                category: categoryIn
+            }
+        });
+        if (filteredPosts.length == 0)
+            throw new Error("Error: No post in this caregory");
+        filteredPosts.sort(sortByDate);
+        return (filteredPosts);
+    } catch (err) {
+        throw ("Error: No post in this caregory");
+    }
+
+}
+
+module.exports.getPostsByMinDate = async function (minDateStr) {
+    const Op = Sequelize.Op;
+
+    try {
+        const filteredPosts = await Post.findAll({
+            where: {
+                postDate: {
+                    [Op.gte]: new Date(minDateStr)
+                }
+            }
+        });
+        if (filteredPosts.length == 0)
+            throw new Error("Error: No posts found after this date");
+        filteredPosts.sort(sortByDate);
+        return (filteredPosts);
+    } catch (err) {
+        throw new Error("Error: No posts found after this date");
+    }
+
+}
+
+module.exports.getPostById = async function (idIn) {
+
+    //console.log(" in get post");
+    //console.log(id);
+
+    try {
+        const filteredPosts = await Post.findAll({
+            where: {
+                id: idIn
+            }
+        });
+        if (filteredPosts.length == 0)
+            throw new Error("Error: post does not exist");
+        filteredPosts.sort(sortByDate);
+        return (filteredPosts[0]);
+    } catch (err) {
+        throw new Error("Error: post does not exist");
+    }
+
+}
+
+module.exports.getPublishedPostsByCategory = async function (categoryIn) {
+
+    try {
+        const filteredPosts = await Post.findAll({
+            where: {
+                category: categoryIn,
+                published: true
+            }
+        });
+        if (filteredPosts.length == 0)
+            throw new Error("Error: No post published in this category");
+        filteredPosts.sort(sortByDate);
+        return (filteredPosts);
+    } catch (err) {
+        throw new Error("Error: No post published in this category");
+    }
+
+}
+
+//create
+
+module.exports.addPost = async function (postData) {
+    postData.published = postData.published ? true : false;
+
+    for (let key in postData) {
+        if (postData[key] == "") {
+            postData[key] = null;
         }
-        //console.log("In initialize");
-        
-        resolve();
-    })       
+    }
+    postData.postDate = new Date().toJSON().slice(0, 10);
+
+    try {
+        await Post.create(postData);
+        console.log("post create");
+        return ("Post added")
+    } catch (err) {
+        throw new Error("Error: unable to create post")
+    }
 }
 
-
-module.exports.getAllPosts = function() 
+// delete
+module.exports.deletPostyById = async function(idIn)
 {
-    return new Promise ((resolve, reject) => 
+    try {
+        await Post.destroy(
+            {
+                where: { id: idIn}
+            }
+        );
+        return ("destroyed");
+    } catch (err)
     {
-        posts.sort(sortByID);
-        if (posts.length == 0) reject("Error: no results returned");
-        resolve(posts);
-    })
+        throw new Error ("Error: fail to delete post " + idIn)
+    }
 }
 
-module.exports.getPublishedPosts = function() 
-{
-    return new Promise ((resolve, reject) => 
-    {        
-        const publishedPost = posts.filter(post => post.published == true);
-        publishedPost.sort(sortByDate);
-        if (publishedPost.length == 0) reject("Error: No post has been published");
-        resolve(publishedPost);
-    })
+
+//===============
+// category
+
+// read
+module.exports.getCategories = async function () {
+    try {
+        const categ = await Category.findAll();
+        if (categ.length == 0)
+            throw new Error("Error: No categories found");
+        return (categ);
+    } catch (err) {
+        throw new Error("Error: No categories found");
+    }
 }
 
-module.exports.getCategories = function() 
+// create
+module.exports.addCategory= async function (categoryData)
 {
-    return new Promise ((resolve, reject) => 
+    for (const key in categoryData)
     {
-        if (categories.length == 0) reject("Error: No category return");
-        resolve(categories);
-    })
-}
-
-
-module.exports.addPost = function(postData)
-{
-    return new Promise ((res, rej) => 
+        if (categoryData[key] == "")
+        {
+            categoryData[key] = null;
+        }
+    }
+    try 
     {
-        if (postData.published) 
-            postData.published = true;
-        else
-            postData.published = false;
-        
-        // set id
-        postData.id = posts.length + 1;
-        postData.postDate = new Date().toJSON().slice(0, 10); 
-        posts.push(postData);
-        res();
-    })
-}
-
-module.exports.getPostsByCategory = function(category)
-{
-    return new Promise((res, rej)=>
+        await Category.create(categoryData);
+        console.log("category added");
+        return("category added");
+    } catch (err)
     {
-        const postsByCategory = posts.filter(post => post.category == category);
-        postsByCategory.sort(sortByID);
-        if (postsByCategory.length == 0) rej("Error: No post in this caregory");
-        res(postsByCategory);
-    })
+        throw new Error ("Error: Unable to create category");
+    }
 }
 
-module.exports.getPostsByMinDate = function(minDateStr)
+// delete
+module.exports.deleteCategoryById = async function(idIn)
 {
-    minDate = Date.parse(minDateStr);
-
-    return new Promise((res, rej)=>
+    try {
+        await Category.destroy(
+            {
+                where: { id: idIn}
+            }
+        );
+        return ("destroyed");
+    } catch (err)
     {
-        const postsByMinDate = posts.filter(post => Date.parse(post.postDate) > minDate);
-        postsByMinDate.sort(sortByDate);
-        if (postsByMinDate.length == 0) rej("Error: No post found after this date");
-        res(postsByMinDate);
-    })
+        throw new Error ("Error: fail to delete category " + idIn)
+    }
 }
 
-module.exports.getPostById = function (id) 
-{
-   
-    console.log(" in get post");
-    console.log(id);
-    return new Promise ((resolve, reject) => 
-    {        
-        const postById = posts.filter(post => post.id == id);
-        postById.sort(sortByDate);
-        if (postById.length == 0) reject("Error: No post by this id");
-        resolve(postById[0]);
-    })
-}
 
-module.exports.getPublishedPostsByCategory = function(category)
-{
-    return new Promise((res, rej)=>
-    {
-        const filterPost = posts.filter(post => post.category == category && post.published == true);
-        filterPost.sort(sortByDate);
-        if (filterPost.length == 0) rej("Error: No published post in this caregory");
-        res(filterPost);
-    })
-}
+
+
+
+
 
 // self test
 
