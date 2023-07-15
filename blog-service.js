@@ -3,7 +3,7 @@
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 12 July 2023__________
+*  Name: Wai Yin Chung, Johnny________ Student ID: 180995219________ Date: 15 July 2023__________
 *
 *  Cyclic Web App URL: https://tame-gold-dhole-vest.cyclic.app_________________
 *
@@ -81,7 +81,7 @@ module.exports.getAllPosts = async function () {
         if (filteredPosts.length == 0)
             throw new Error("Error: No post found");
         filteredPosts.sort(sortByID);
-        //console.log(filteredPosts);
+        console.log(filteredPosts);
         return (filteredPosts);
     } catch (err) {
         throw new Error("Error: No post found");
@@ -188,15 +188,18 @@ module.exports.getPublishedPostsByCategory = async function (categoryIn) {
 //create
 
 module.exports.addPost = async function (postData) {
-    postData.published = postData.published ? true : false;
+    
 
     for (let key in postData) {
         if (postData[key] == "") {
             postData[key] = null;
         }
     }
-    postData.postDate = new Date().toJSON().slice(0, 10);
 
+    postData.published = postData.published ? true : false;
+
+    postData.postDate = new Date().toJSON().slice(0, 10);
+    console.log(postData);
     try {
         await Post.create(postData);
         console.log("post create");
@@ -207,7 +210,7 @@ module.exports.addPost = async function (postData) {
 }
 
 // delete
-module.exports.deletPostyById = async function(idIn)
+module.exports.deletePostById = async function(idIn)
 {
     try {
         await Post.destroy(

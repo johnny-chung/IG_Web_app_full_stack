@@ -11,6 +11,7 @@
                     <th scope="col">Post Date</th>
                     <th scope="col">Category</th>
                     <th scope="col">Published</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -21,6 +22,9 @@
                     <td>{{#formatDate postDate}}{{/formatDate}}</td>
                     <td>{{category}}</td>
                     <td>{{published}}</td>
+                    <td>
+                        <a href="posts/delete/{{id}}" class="btn btn-danger">Remove</a>            
+                    </td>
                 </tr>
                 {{/each}}
 
