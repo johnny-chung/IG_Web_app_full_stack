@@ -11,12 +11,13 @@
 *
 ********************************************************************************/ 
 
+const http = require("http");
+const https = require("https");
 
-var HTTP_PORT = process.env.PORT || 8080;
-var express = require("express");
-var app = express();
-var path = require("path");
+const express = require("express");
+const app = express();
 
+const fs = require("fs")
 const multer = require("multer");
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
@@ -25,22 +26,44 @@ const stripJS = require('strip-js');
 
 let blog=require("./blog-service.js");
 
+// mongo auth
+let authData = require("./auth-service.js");
+
+//client session middleware
+let clientSessions = require('client-sessions');
+
 //================================
-//dotenv
+//dotenv // read env file
 const env =require("dotenv");
 env.config()
+
+
+
+//=============================
+// http/ https
+
+const HTTP_PORT = process.env.PORT || 8080;
+const HTTPS_PORT = 4433;
+
+const SSL_KEY_FILE = "./cert/server.key";
+const SSL_CRT_FILE = "./cert/server.crt";
+
+const https_options = {
+    key: fs.readFileSync(__dirname + "/" + SSL_KEY_FILE),
+    cert: fs.readFileSync(__dirname + "/" + SSL_CRT_FILE)
+};
 
 //======================================
 // cloudinary config
 
 cloudinary.config(
     {
-    cloud_name: 'dp2anoz4i',
-    //cloud_name: process.env.CLOUDINARY_NAME,
-    api_key: '312556922355814',
-    //api_key: process.env.CLOUDINARY_API,
-    api_secret: 'pdKwbgA2e8IpIh7pL147GOXl1sE',
-    //api_secret: process.env.CLOUDINARY_API_SECRET,
+    //cloud_name: 'dp2anoz4i',
+    cloud_name: process.env.CLOUDINARY_NAME,
+    //api_key: '312556922355814',
+    api_key: process.env.CLOUDINARY_API,
+    //api_secret: 'pdKwbgA2e8IpIh7pL147GOXl1sE',
+    api_secret: process.env.CLOUDINARY_API_SECRET,
     secure: true
 });
 
@@ -117,8 +140,39 @@ app.use(function(req,res,next)
     next();
 });
 
-//regular express
-app.use(express.urlencoded({extended: true}));
+
+
+//---------------
+// client session
+
+app.use(clientSessions({
+    cookieName: "session",
+
+    //secret: "web322_app_180995219",
+    secret: process.env.SESSION_KEY,
+    duration: 15* 60* 1000,
+    activeDuration: 2 * 60 * 1000
+}));
+
+// custom session middleware, send session
+app.use(function(req, res, next) {
+    res.locals.session = req.session;
+    next();
+})
+
+
+// ensureLogin middleware
+const ensureLogin = (req, res, next) => {
+    if (!req.session.user) {
+        res.redirect('/login');
+    }
+    else {
+        next();
+    }
+}
+
+//express
+app.use(express.urlencoded({extended: false}));
 
 //======================================
 //route
@@ -242,7 +296,7 @@ app.get('/blog/:id', async (req, res) => {
 });
 
 // get all post, post by category(query) or by minDate (query)
-app.get("/posts", async (req, res) => 
+app.get("/posts", ensureLogin, async (req, res) => 
 {
     const category = req.query.category;
     const minDate = req.query.minDate;
@@ -287,7 +341,7 @@ app.get("/posts", async (req, res) =>
 });
 
 // get post by id
-app.get("/post/:id", async (req, res) => 
+app.get("/post/:id", ensureLogin, async (req, res) => 
 {
     try{
         const data = await blog.getPostById(req.params.id);               
@@ -302,7 +356,7 @@ app.get("/post/:id", async (req, res) =>
 
 
 // go to add post page
-app.get("/posts/add", async (req, res) => 
+app.get("/posts/add", ensureLogin, async (req, res) => 
 {
     try{
         const data = await blog.getCategories();
@@ -316,7 +370,7 @@ app.get("/posts/add", async (req, res) =>
 });
 
 // POST: add post
-app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
+app.post("/posts/add", ensureLogin, upload.single("featureImage"), async (req, res) => {
 
     // code from cloudinary
     if(req.file)
@@ -374,7 +428,7 @@ app.post("/posts/add", upload.single("featureImage"), async (req, res) => {
     
 })
  //Delete
-app.get("/posts/delete/:id", async(req, res) => 
+app.get("/posts/delete/:id", ensureLogin, async(req, res) => 
 {
     try {
         await blog.deletePostById(req.params.id);        
@@ -392,7 +446,7 @@ app.get("/posts/delete/:id", async(req, res) =>
 // category
 
 // get all categories
-app.get("/categories", async (req, res) => 
+app.get("/categories", ensureLogin, async (req, res) => 
 {
     try {
         const data = await blog.getCategories();
@@ -406,13 +460,13 @@ app.get("/categories", async (req, res) =>
 });
 
 // go to add category page
-app.get("/categories/add", (req, res) => 
+app.get("/categories/add", ensureLogin, async (req, res) => 
 {
     res.render('addCategory');
 });
 
 
-app.post("/categories/add", async (req, res) => 
+app.post("/categories/add", ensureLogin, async (req, res) => 
 {
     try{
         await blog.addCategory(req.body);
@@ -424,7 +478,7 @@ app.post("/categories/add", async (req, res) =>
     }
 });
 
-app.get("/categories/delete/:id", async(req, res) => 
+app.get("/categories/delete/:id", ensureLogin, async(req, res) => 
 {
     try {
         await blog.deleteCategoryById(req.params.id);        
@@ -436,11 +490,68 @@ app.get("/categories/delete/:id", async(req, res) =>
     }
 })
 
+//=======================
+//login & register
+
+//---------
+// get
+
+//login
+app.get("/login", async (req, res) => 
+{
+    res.render('login');
+});
+
+// register
+app.get("/register", async (req, res) => 
+{
+    res.render('register');
+});
+
+//------
+// post
+app.post("/register", async (req, res) => 
+{
+    try{
+        await authData.registerUser(req.body);
+        res.render('register', {successMessage: `User created`});
+
+    } catch (err)
+    {        
+        res.render('register', {errorMessage: err, userName: req.body.userName});
+    }
+});
+
+app.post("/login", async (req, res) => {
+    try {  
+        req.body.userAgent = req.get('User-Agent');
+        const matchedUser = await authData.checkUser(req.body);
+        req.session.user = {
+            userName: matchedUser.userName,
+            email: matchedUser.email,
+            loginHistory: matchedUser.loginHistory
+        }
+        //console.log(req.session.user);
+        res.redirect('/posts');
+    } catch (err) {
+        res.render('login', {errorMessage: err, userName: req.body.userName});
+    }
+});
+
+//=======
+app.get("/logout", async (req, res) => 
+{
+    req.session.reset();
+    res.redirect("/login");
+});
+
+app.get("/userHistory", ensureLogin, async (req, res) => 
+{
+    res.render('userHistory');
+});
 
 
-
-
-
+//==============================
 // others
 app.use((req, res) => 
 {
@@ -452,12 +563,18 @@ function onHttpStart()
 {
     console.log("Express http server listening on: " + HTTP_PORT);
 }
+function onHttpsStart() 
+{
+    console.log("Express https server listening on: " + HTTPS_PORT);
+}
 
 
 const listenFunc = async() => {    
     try {
         await blog.initialize();
-        app.listen(HTTP_PORT, onHttpStart);
+        await authData.initialize();
+        http.createServer(app).listen(HTTP_PORT, onHttpStart);
+        https.createServer(https_options, app).listen(HTTPS_PORT, onHttpsStart);
     } catch (err)
     {
         console.log(err)
